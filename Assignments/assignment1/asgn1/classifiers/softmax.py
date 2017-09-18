@@ -28,8 +28,38 @@ def softmax_loss_naive(W, X, y, reg):
   # Store the loss in loss and the gradient in dW. If you are not careful     #
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
-  #############################################################################
-  pass
+  ############################################################################# 
+  
+  N, D = X.shape
+  C = W.shape[1]
+
+  for i in xrange(N):
+    
+    total_prob = 0
+    correct_prob = 0
+    
+    scores = np.dot(X[i,:], W)
+    scores = np.exp(scores)
+    total_prob = np.sum(scores)
+    
+    for j in xrange(C):
+        
+        dW_coeff = scores[j] / total_prob
+        
+        if j == y[i]:
+            correct_prob = scores[j]
+            dW_coeff -= 1
+        
+        dW[:, j] += dW_coeff * X[i, :].T
+    
+    loss += -1 * np.log(correct_prob/total_prob)
+
+  loss /= N
+  loss += 0.5 * reg * np.sum(W *W)
+
+  dW /= N
+  dW += (reg*W)
+
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
@@ -53,7 +83,25 @@ def softmax_loss_vectorized(W, X, y, reg):
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  pass
+
+  N, D = X.shape
+    
+  scores = X.dot(W)
+  scores -= np.max(scores)  # for numerical stability
+  scores = np.exp(scores)
+  scores_sum = np.sum(scores, axis=1).reshape(N, 1)
+  scores_softmax = np.divide(scores, scores_sum)
+  
+  loss = -1 * np.log(scores_softmax[range(N), y])
+  loss = np.sum(loss) / N
+  loss += 0.5 * reg * np.sum(W*W)
+
+  dW_coeff = scores_softmax
+  dW_coeff[range(N), y] -= 1
+  dW = np.dot(X.T, dW_coeff)
+    
+  dW /= N
+  dW += (reg * W)
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
