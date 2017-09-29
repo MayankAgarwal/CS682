@@ -154,7 +154,7 @@ class TwoLayerNet(object):
   def train(self, X, y, X_val, y_val,
             learning_rate=1e-3, learning_rate_decay=0.95,
             reg=1e-5, num_iters=100,
-            batch_size=200, verbose=False):
+            batch_size=200, verbose=False, hypergrad=False, hypergrad_beta=1e-6):
     """
     Train this neural network using stochastic gradient descent.
 
@@ -171,6 +171,8 @@ class TwoLayerNet(object):
     - num_iters: Number of steps to take when optimizing.
     - batch_size: Number of training examples to use per step.
     - verbose: boolean; if true print progress during optimization.
+    - hypergrad: boolean; if true, adjusts the learning rate as per Hypergradient Descent
+    - hypergrad_beta: Scalar representing the learning rate for the network learning rate update
     """
     num_train = X.shape[0]
     iterations_per_epoch = max(num_train / batch_size, 1)
@@ -179,6 +181,10 @@ class TwoLayerNet(object):
     loss_history = []
     train_acc_history = []
     val_acc_history = []
+    
+    # Used for hypergradient descent
+    lr_history = []
+    grads_prev = None
 
     for it in xrange(num_iters):
       X_batch = None
@@ -198,6 +204,24 @@ class TwoLayerNet(object):
       # Compute loss and gradients using the current minibatch
       loss, grads = self.loss(X_batch, y=y_batch, reg=reg)
       loss_history.append(loss)
+    
+    
+      #########################################################################
+      #                       Hyper-gradient descent                          #
+      #########################################################################
+    
+      if hypergrad is True and grads_prev is not None:
+            
+            dLearningRate = 0.0
+            
+            for param in grads.keys():
+                hypergradient = np.sum(grads[param] * (-1*grads_prev[param]))
+                dLearningRate += hypergradient
+            
+            learning_rate += (-1)*hypergrad_beta*dLearningRate
+      
+      grads_prev = grads
+      lr_history.append(learning_rate)
 
       #########################################################################
       # TODO: Use the gradients in the grads dictionary to update the         #
@@ -210,6 +234,7 @@ class TwoLayerNet(object):
       self.params['b1'] += (-1)*learning_rate*grads['b1']
       self.params['W2'] += (-1)*learning_rate*grads['W2']
       self.params['b2'] += (-1)*learning_rate*grads['b2']
+        
         
       #########################################################################
       #                             END OF YOUR CODE                          #
@@ -233,6 +258,7 @@ class TwoLayerNet(object):
       'loss_history': loss_history,
       'train_acc_history': train_acc_history,
       'val_acc_history': val_acc_history,
+      'learning_rate_history': lr_history,
     }
 
   def predict(self, X):
