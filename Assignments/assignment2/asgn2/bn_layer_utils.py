@@ -11,7 +11,7 @@ def affine_relu_dropout_forward(x, Wx, bx, dropout_param):
 
 
 def affine_relu_dropout_backward(dout, cache):
-    ad_cache, dp_cache = cache
+    af_cache, dp_cache = cache
     dout = dropout_backward(dout, dp_cache)
     dout, dW, db = affine_relu_backward(dout, af_cache)
 

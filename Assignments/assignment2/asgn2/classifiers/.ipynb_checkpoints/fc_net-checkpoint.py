@@ -199,9 +199,11 @@ class FullyConnectedNet(object):
         self.params['b' + str(i)] = bx
     
     
-    for i in xrange(len(hidden_dims)):
-        self.params['gamma' + str(i)] = np.ones(hidden_dims[i])
-        self.params['beta' + str(i)] = np.zeros(hidden_dims[i])
+    if self.use_batchnorm:
+        for i in xrange(len(hidden_dims)):
+            self.params['gamma' + str(i)] = np.ones(hidden_dims[i])
+            self.params['beta' + str(i)] = np.zeros(hidden_dims[i])
+    
     
     ############################################################################
     #                             END OF YOUR CODE                             #
