@@ -533,7 +533,31 @@ def max_pool_forward_naive(x, pool_param):
   #############################################################################
   # TODO: Implement the max pooling forward pass                              #
   #############################################################################
-  pass
+  N, C, H, W = x.shape
+  ph = pool_param['pool_height']
+  pw = pool_param['pool_width']
+  stride = pool_param['stride']
+
+  h_new = (H - ph)/stride + 1
+  w_new = (W - pw)/stride + 1
+
+  out = np.zeros((N, C, h_new, w_new))
+    
+  for x_i in xrange(N):
+    for channel in xrange(C):
+        
+        x_start, y_start = 0, 0
+        
+        for h_i in xrange(h_new):
+            for w_i in xrange(w_new):
+                
+                img = x[x_i, channel, x_start:x_start+ph, y_start:y_start+pw]
+                out[x_i, channel, h_i, w_i] = np.max(img)
+                
+                y_start += stride
+            
+            x_start += stride
+            y_start = 0
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -556,7 +580,35 @@ def max_pool_backward_naive(dout, cache):
   #############################################################################
   # TODO: Implement the max pooling backward pass                             #
   #############################################################################
-  pass
+  x, pool_param = cache
+
+  N, C, H, W = x.shape
+  _, _, Ho, Wo = dout.shape
+  ph, pw, stride = pool_param['pool_height'], pool_param['pool_width'], pool_param['stride']
+  
+  dx = np.zeros_like(x)
+    
+  for xi in xrange(N):
+    for ci in xrange(C):
+        
+        x_start, y_start = 0, 0
+        
+        for hi in xrange(Ho):
+            for wi in xrange(Wo):
+                
+                img = x[xi, ci, x_start:x_start+ph, y_start:y_start+pw]
+                img = (img == np.max(img))
+                
+                dimg = img * dout[xi, ci, hi, wi]
+                
+                dx[xi, ci, x_start:x_start+ph, y_start:y_start+pw] += dimg
+                
+                y_start += stride
+            
+            x_start += stride
+            y_start = 0
+  
+
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
