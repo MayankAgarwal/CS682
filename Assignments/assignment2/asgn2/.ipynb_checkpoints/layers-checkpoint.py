@@ -337,7 +337,7 @@ def dropout_forward(x, dropout_param):
     # TODO: Implement the training phase forward pass for inverted dropout.   #
     # Store the dropout mask in the mask variable.                            #
     ###########################################################################
-    mask = (np.random.random(x.shape) < p) / p
+    mask = (np.random.random(x.shape) <= (1-p)) / (1-p)
     out = mask * x
     ###########################################################################
     #                            END OF YOUR CODE                             #
@@ -410,7 +410,44 @@ def conv_forward_naive(x, w, b, conv_param):
   # TODO: Implement the convolutional forward pass.                           #
   # Hint: you can use the function np.pad for padding.                        #
   #############################################################################
-  pass
+  N, C, H, W = x.shape
+  F, _, HH, WW = w.shape
+
+  stride = conv_param['stride']
+  pad = conv_param['pad']
+    
+  H_new = 1 + (H + 2 * pad - HH) / stride
+  W_new = 1 + (W + 2 * pad - WW) / stride
+
+  out = np.zeros((N, F, H_new, W_new))
+    
+  # Pad
+  pad_width = [(0,0), (0,0), (pad, pad), (pad, pad)]
+  x = np.pad(x, pad_width, mode='constant', constant_values=0)
+
+  # Iterate over data samples
+  for x_i in xrange(N):    
+    for filter_i in xrange(F):
+        
+        x_start = 0
+        y_start = 0
+        filter_out = np.zeros((H_new, W_new))
+        
+        for i in xrange(H_new):
+            for j in xrange(W_new):
+                
+                img = x[x_i, :, x_start : x_start+HH, y_start : y_start+WW]
+                wf =  w[filter_i, :, :, :]
+                
+                filter_out[i][j] = np.sum(img * wf) + b[filter_i]
+                
+                y_start += stride
+            
+            x_start += stride
+            y_start = 0
+        
+        out[x_i, filter_i] = filter_out
+  
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -435,7 +472,42 @@ def conv_backward_naive(dout, cache):
   #############################################################################
   # TODO: Implement the convolutional backward pass.                          #
   #############################################################################
-  pass
+  x, w, b, conv_param = cache
+  pad, stride = conv_param['pad'], conv_param['stride']
+    
+  N, C, H, W = x.shape
+  F, _, HH, WW = w.shape
+  _, _, Ho, Wo = dout.shape
+    
+  dx = np.zeros_like(x)
+  dw = np.zeros_like(w)
+  db = np.zeros_like(b)
+
+  for x_i in xrange(N):
+        for filter_i in xrange(F):
+            
+            x_start = 0
+            y_start = 0
+            
+            for i in xrange(Ho):
+                for j in xrange(Wo):
+                    
+                    img = x[x_i, :, x_start : x_start+HH, y_start : y_start+WW]
+                    wf = w[filter_i, :, :, :]
+                    
+                    dw[filter_i] += img * dout[x_i, filter_i, i, j]
+                    dx[x_i, :, x_start:x_start+HH, y_start:y_start+WW] += wf * dout[x_i, filter_i, i, j]
+                    db[filter_i] += 1*dout[x_i, filter_i, i, j]
+                    
+                    y_start += stride
+                
+                x_start += stride
+                y_start = 0
+  
+  # Remove 'x' padding
+  if pad > 0:
+      dx = dx[:, :, pad : -1*pad, pad:-1*pad]
+            
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
