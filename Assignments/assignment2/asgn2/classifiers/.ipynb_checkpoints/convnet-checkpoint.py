@@ -58,17 +58,29 @@ class ConvNet5Layer(object):
     )
     self.params['b1'] = np.zeros(num_filters)
     
+    # Spatial BatchNorm 1 params
+    self.params['gamma1'] = np.ones(num_filters)
+    self.params['beta1'] = np.zeros(num_filters)
+    
     # CONV2 params
     self.params['W2'] = np.random.normal(
         0, scale=weight_scale, size=(num_filters, num_filters, filter_size, filter_size)
     )
     self.params['b2'] = np.zeros(num_filters)
     
+    # Spatial BatchNorm 2 params
+    self.params['gamma2'] = np.ones(num_filters)
+    self.params['beta2'] = np.zeros(num_filters)
+    
     # CONV3 params
     self.params['W3'] = np.random.normal(
         0, scale=weight_scale, size=(num_filters, num_filters, filter_size, filter_size)
     )
     self.params['b3'] = np.zeros(num_filters)
+    
+    # Spatial BatchNorm 3 params
+    self.params['gamma3'] = np.ones(num_filters)
+    self.params['beta3'] = np.zeros(num_filters)
     
     # Affine1 params
     self.params['W4'] = np.random.normal(
@@ -102,10 +114,17 @@ class ConvNet5Layer(object):
     Input / output: Same API as TwoLayerNet in fc_net.py.
     """
     W1, b1 = self.params['W1'], self.params['b1']
+    gamma1, beta1 = self.params['gamma1'], self.params['beta1']
+    
     W2, b2 = self.params['W2'], self.params['b2']
+    gamma2, beta2 = self.params['gamma2'], self.params['beta2']
+    
     W3, b3 = self.params['W3'], self.params['b3']
+    gamma3, beta3 = self.params['gamma3'], self.params['beta3']
+    
     W4, b4 = self.params['W4'], self.params['b4']
     gamma4, beta4 = self.params['gamma4'], self.params['beta4']
+    
     W5, b5 = self.params['W5'], self.params['b5']
 
     # pass conv_param to the forward pass for the convolutional layer
@@ -117,6 +136,7 @@ class ConvNet5Layer(object):
     
     # Batchnorm params
     bn_param = {'mode': 'train'}
+    sbn_param = {'mode': 'train'}
 
     scores = None
     ############################################################################
@@ -124,9 +144,9 @@ class ConvNet5Layer(object):
     # computing the class scores for X and storing them in the scores          #
     # variable.                                                                #
     ############################################################################
-    conv1_out, conv1_cache = conv_relu_pool_forward(X, W1, b1, conv_param, pool_param)
-    conv2_out, conv2_cache = conv_relu_pool_forward(conv1_out, W2, b2, conv_param, pool_param)
-    conv3_out, conv3_cache = conv_relu_pool_forward(conv2_out, W3, b3, conv_param, pool_param)
+    conv1_out, conv1_cache = conv_bn_relu_pool_forward(X, W1, b1, gamma1, beta1, conv_param, pool_param, sbn_param)
+    conv2_out, conv2_cache = conv_bn_relu_pool_forward(conv1_out, W2, b2, gamma2, beta2, conv_param, pool_param, sbn_param)
+    conv3_out, conv3_cache = conv_bn_relu_pool_forward(conv2_out, W3, b3, gamma3, beta3, conv_param, pool_param, sbn_param)
     af1_out, af1_cache = affine_bn_relu_forward(conv3_out, W4, b4, gamma4, beta4, bn_param)
     af2_out, af2_cache = affine_forward(af1_out, W5, b5)
     
@@ -155,22 +175,33 @@ class ConvNet5Layer(object):
     
     dout, dW5, db5 = affine_backward(dout, af2_cache)
     dout, dW4, db4, dgamma4, dbeta4 = affine_batchnorm_relu_backward(dout, af1_cache)
-    dout, dW3, db3 = conv_relu_pool_backward(dout, conv3_cache)
-    dout, dW2, db2 = conv_relu_pool_backward(dout, conv2_cache)
-    dout, dW1, db1 = conv_relu_pool_backward(dout, conv1_cache)
+    dout, dW3, db3, dgamma3, dbeta3 = conv_bn_relu_pool_backward(dout, conv3_cache)
+    dout, dW2, db2, dgamma2, dbeta2 = conv_bn_relu_pool_backward(dout, conv2_cache)
+    dout, dW1, db1, dgamma1, dbeta1 = conv_bn_relu_pool_backward(dout, conv1_cache)
     
     grads['W1'] = dW1 + self.reg*W1
     grads['b1'] = db1
+    grads['gamma1'] = dgamma1
+    grads['beta1'] = dbeta1
+    
     grads['W2'] = dW2 + self.reg*W2
     grads['b2'] = db2
+    grads['gamma2'] = dgamma2
+    grads['beta2'] = dbeta2
+    
     grads['W3'] = dW3 + self.reg*W3
     grads['b3'] = db3
+    grads['gamma3'] = dgamma3
+    grads['beta3'] = dbeta3
+    
     grads['W4'] = dW4 + self.reg*W4
     grads['b4'] = db4
     grads['beta4'] = dbeta4
     grads['gamma4'] = dgamma4
+    
     grads['W5'] = dW5 + self.reg*W5
     grads['b5'] = db5
+
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
