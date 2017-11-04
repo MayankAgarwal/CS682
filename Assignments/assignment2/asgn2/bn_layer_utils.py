@@ -31,7 +31,7 @@ def affine_bn_relu_forward(x, Wx, bx, gamma, beta, bn_params):
 def affine_batchnorm_relu_backward(dout, cache):
     af_cache, bn_cache, relu_cache = cache
     dout = relu_backward(dout, relu_cache)
-    dout, dgamma, dbeta = batchnorm_backward(dout, bn_cache)
+    dout, dgamma, dbeta = batchnorm_backward_alt(dout, bn_cache)
     dout, dx, db = affine_backward(dout, af_cache)
 
     return dout, dx, db, dgamma, dbeta
@@ -53,7 +53,7 @@ def affine_bn_relu_dropout_backward(dout, cache):
 
     dout = dropout_backward(dout, dp_cache)
     dout = relu_backward(dout, relu_cache)
-    dout, dgamma, dbeta = batchnorm_backward(dout, bn_cache)
+    dout, dgamma, dbeta = batchnorm_backward_alt(dout, bn_cache)
     dout, dx, db = affine_backward(dout, af_cache)
 
     return dout, dx, db, dgamma, dbeta

@@ -1,6 +1,6 @@
 import numpy as np
 
-def flip_and_augment_data(X, y, p=0.2, flip_dim=-1, extend_dim=0):
+def flip_and_augment_data(X, y, p=0.3, flip_dim=-1, extend_dim=0):
     """
     Flips data with probability p
     """
