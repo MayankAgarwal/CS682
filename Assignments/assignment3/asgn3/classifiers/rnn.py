@@ -243,6 +243,7 @@ class CaptioningRNN(object):
     current_word = np.zeros((N, 1), dtype=np.int32)
     current_word.fill(self._start)
     prev_h, _ = affine_forward(features, W_proj, b_proj)
+    prev_c = np.zeros_like(prev_h)
     
     for i in xrange(max_length):
         wordvectors, _ = word_embedding_forward(current_word, W_embed)
@@ -250,7 +251,7 @@ class CaptioningRNN(object):
         if self.cell_type == 'rnn':
             next_h, _ = rnn_step_forward(wordvectors.squeeze(), prev_h, Wx, Wh, b)
         elif self.cell_type == 'lstm':
-            pass
+            next_h, prev_c, _ = lstm_step_forward(wordvectors.squeeze(), prev_h, prev_c, Wx, Wh, b)
         
         scores, _ = affine_forward(next_h, W_vocab, b_vocab)
         caption_words = np.argmax(scores, axis=-1)
